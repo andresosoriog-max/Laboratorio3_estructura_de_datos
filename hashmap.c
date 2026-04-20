@@ -45,8 +45,19 @@ int is_equal(void* key1, void* key2){
 // Inicialice el índice current a -1.
 
 HashMap * createMap(long capacity) {
+    HashMap * map = (HashMap *)malloc(sizeof(HashMap));
+    if(map == NULL)return NULL;
 
-    return NULL;
+    map -> buckets = (Pair **)calloc(capacity,sizeof(Pair *));
+
+    if(map -> buckets == NULL){
+        free(map);
+        return NULL;
+    }
+    map -> size = 0;
+    map -> capacity = capacity;
+    map -> current = -1;
+    return map;
 }
 
 // 2. Implemente la función void insertMap(HashMap * map, char * key, void * value). 
@@ -59,6 +70,27 @@ HashMap * createMap(long capacity) {
 // No inserte claves repetidas. Recuerde que el arreglo es circular. Recuerde actualizar la variable size.
 
 void insertMap(HashMap * map, char * key, void * value) {
+    long aux = hash(key, map -> capacity);
+
+    while(map -> buckets[aux] != NULL){
+        if(map -> buckets[aux] -> key && strcmp(map -> buckets[aux] -> key, key) == 0){
+            map -> buckets[aux] -> value = value;
+            map -> current = aux;
+            return;
+        }
+        aux = (aux+1)% map -> capacity;
+    }
+    aux = hash(key, map ->capacity);
+    while (map -> buckets[aux] != NULL && map -> buckets[aux] -> key != NULL){
+        aux = (aux+1) % map -> capacity;
+    }
+
+    if(map -> buckets[aux] != NULL){
+        free(map -> buckets[aux]);
+    }
+    map -> buckets[aux] = createPair(key, value);
+    map -> size++;
+    map -> current = aux;
 
 }
 
@@ -70,8 +102,16 @@ void insertMap(HashMap * map, char * key, void * value) {
 // Recuerde actualizar el índice current a la posición encontrada. Recuerde que el arreglo es circular.
 
 Pair * searchMap(HashMap * map,  char * key) {   
+    if(map==NULL||key==NULL)return NULL;
 
+    long aux = hash(key, map->capacity);
 
+    while(map -> buckets[aux] != NULL){
+        if(strcmp(map -> buckets[aux] -> key, key) == 0){
+            map -> current = aux;
+            return map -> buckets[aux];
+        }aux = (aux+1) % map -> capacity;
+    }
     return NULL;
 }
 
@@ -82,8 +122,13 @@ Pair * searchMap(HashMap * map,  char * key) {
 // Recuerde actualizar la variable size.
 
 void eraseMap(HashMap * map,  char * key) {    
+    if(map == NULL || key == NULL)return;
 
-
+    Pair * par = searchMap(map, key);
+    if(par != NULL){
+        par -> key = NULL;
+        map -> size--;
+    }
 }
 
 // 5. Implemente las funciones para recorrer la estructura: Pair * firstMap(HashMap * map) retorna el primer Pair válido del arreglo buckets. 
@@ -91,12 +136,27 @@ void eraseMap(HashMap * map,  char * key) {
 // Recuerde actualizar el índice.
 
 Pair * firstMap(HashMap * map) {
+    if(map == NULL)return NULL;
 
+    for(long i = 0; i < map -> capacity; i++){
+        if(map -> buckets[i] != NULL && map -> buckets[i] -> key != NULL){
+            map -> current = i;
+            return map -> buckets[i];
+        }
+    }
+    map -> current = -1;
     return NULL;
 }
 
 Pair * nextMap(HashMap * map) {
-
+    if(map==NULL || map-> current < 0 || map-> current >= map -> capacity)return NULL;
+    for(long i = map -> current+1;i< map->capacity; i++){
+        if(map -> buckets[i] != NULL && map -> buckets[i] -> key !=NULL){
+            map -> current= i;
+            return map -> buckets[i];
+        }
+    }
+    map -> current = -1;
     return NULL;
 }
 
